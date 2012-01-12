@@ -50,18 +50,7 @@ func NewSysLogWriter() (w SysLogWriter) {
 	w = SysLogWriter(make(chan *LogRecord, LogBufferLength))
 	go func() {
 		for rec := range w {
-			var timestr string
-			//var timestrAt int64
-
-			//if rec.Created != timestrAt {
-			tm := TimeConversionFunction(rec.Created / 1e9)
-			//timestr, timestrAt = tm.Format("01/02/06 15:04:01"), rec.Created/1e9
-			timestr = tm.Format("01/02/06 15:04:01")
-			//}
-			fmt.Printf("[%v] [%v] %v --------  !!!!!\n", timestr, levelStrings[rec.Level], rec.Message)
-			fmt.Fprintf(sock, "%v [%v] %v !!\n", timestr, levelStrings[rec.Level], rec.Message)
-			//}
-			
+			fmt.Fprintf(sock, FormatLogRecord("%S:[%D %T]%L: %M", rec))
 		}
 	}()
 	return

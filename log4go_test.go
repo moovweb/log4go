@@ -31,12 +31,12 @@ func TestELog(t *testing.T) {
 	TimeConversionFunction = time.SecondsToUTC
 
 	fmt.Printf("Testing %s\n", L4G_VERSION)
-	lr := newLogRecord(CRITICAL, "source", "message")
+	lr := newLogRecord(CRITICAL, "log4go_test", "message")
 	if lr.Level != CRITICAL {
 		t.Errorf("Incorrect level: %d should be %d", lr.Level, CRITICAL)
 	}
-	if lr.Source != "source" {
-		t.Errorf("Incorrect source: %s should be %s", lr.Source, "source")
+	if lr.Source != "log4go_test" {
+		t.Errorf("Incorrect source: %s should be %s", lr.Source, "log4go_test")
 	}
 	if lr.Message != "message" {
 		t.Errorf("Incorrect message: %s should be %s", lr.Source, "message")
@@ -52,13 +52,13 @@ var formatTests = []struct {
 		Test: "Standard formats",
 		Record: &LogRecord{
 			Level:   ERROR,
-			Source:  "source",
+			Source:  "log4go_test",
 			Message: "message",
 			Created: now,
 		},
 		Formats: map[string]string{
 			// TODO(kevlar): How can I do this so it'll work outside of PST?
-			FORMAT_DEFAULT: "[2009/02/13 23:31:30 UTC] [EROR] (source) message\n",
+			FORMAT_DEFAULT: "[2009/02/13 23:31:30 UTC] [EROR] (log4go_test) message\n",
 			FORMAT_SHORT:   "[23:31 02/13/09] [EROR] message\n",
 			FORMAT_ABBREV:  "[EROR] message\n",
 		},
@@ -87,7 +87,7 @@ var logRecordWriteTests = []struct {
 		Test: "Normal message",
 		Record: &LogRecord{
 			Level:   CRITICAL,
-			Source:  "source",
+			Source:  "log4go_test",
 			Message: "message",
 			Created: now,
 		},
@@ -129,15 +129,29 @@ func TestFileLogWriter(t *testing.T) {
 	}
 	defer os.Remove(testLogFile)
 
-	w.LogWrite(newLogRecord(CRITICAL, "source", "message"))
+	w.LogWrite(newLogRecord(CRITICAL, "log4go_test", "message"))
 	w.Close()
 	runtime.Gosched()
 
 	if contents, err := ioutil.ReadFile(testLogFile); err != nil {
 		t.Errorf("read(%q): %s", testLogFile, err)
-	} else if len(contents) != 50 {
+	} else if len(contents) != 55 {
 		t.Errorf("malformed filelog: %q (%d bytes)", string(contents), len(contents))
 	}
+}
+
+func TestSysLog(t *testing.T) {
+	w := NewSysLogWriter()
+	if w == nil {
+		t.Fatalf("Invalid return: w should not be nil")
+	}
+	
+	sl := make(Logger)
+	sl.AddFilter("stdout", DEBUG, w)
+	sl.Log(DEBUG, "TestSysLog", "This message is level DEBUG")
+	sl.Debug("This message is level %s", DEBUG)
+	w.Close()
+	runtime.Gosched()
 }
 
 func TestSysLogWriter(t *testing.T) {
@@ -151,7 +165,7 @@ func TestSysLogWriter(t *testing.T) {
 		t.Fatalf("Invalid return: w should not be nil")
 	}
 
-	w.LogWrite(newLogRecord(CRITICAL, "source", "message"))
+	w.LogWrite(newLogRecord(CRITICAL, "TestSysLogWriter", "message"))
 	w.Close()
 	runtime.Gosched()
 }
@@ -169,13 +183,13 @@ func TestXMLLogWriter(t *testing.T) {
 	}
 	defer os.Remove(testLogFile)
 
-	w.LogWrite(newLogRecord(CRITICAL, "source", "message"))
+	w.LogWrite(newLogRecord(CRITICAL, "log4go_test", "message"))
 	w.Close()
 	runtime.Gosched()
 
 	if contents, err := ioutil.ReadFile(testLogFile); err != nil {
 		t.Errorf("read(%q): %s", testLogFile, err)
-	} else if len(contents) != 185 {
+	} else if len(contents) != 190 {
 		t.Errorf("malformed xmllog: %q (%d bytes)", string(contents), len(contents))
 	}
 }
@@ -437,7 +451,7 @@ func BenchmarkFormatLogRecord(b *testing.B) {
 	rec := &LogRecord{
 		Level:   CRITICAL,
 		Created: now,
-		Source:  "source",
+		Source:  "log4go_test",
 		Message: "message",
 	}
 	for i := 0; i < b.N; i++ {
