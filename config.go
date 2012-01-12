@@ -10,6 +10,30 @@ import (
 	"strconv"
 )
 
+type LogConfig struct {
+	LogPrefix string
+	ConsoleLogLevel int
+	SysLogLevel int
+	FileLogLevel int
+	LogFile string
+}
+
+func NewLoggerFromConfig(logConfig *LogConfig) (logger Logger) {
+	logger = make(Logger)
+	if logConfig.ConsoleLogLevel > 0 {
+		logger.AddFilter("stdout", LogLevel(logConfig.ConsoleLogLevel), NewConsoleLogWriter())
+	}
+	
+	if logConfig.FileLogLevel > 0 {
+		logger.AddFilter("logfile", LogLevel(logConfig.FileLogLevel), NewFileLogWriter(logConfig.LogFile, false)) 
+	}
+	
+	if logConfig.SysLogLevel > 0 {
+		logger.AddFilter("syslog", LogLevel(logConfig.SysLogLevel), NewSysLogWriter()) 
+	}
+	return
+}
+
 type xmlProperty struct {
 	Name  string `xml:"attr"`
 	Value string `xml:"chardata"`
