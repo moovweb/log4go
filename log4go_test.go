@@ -18,7 +18,7 @@ import (
 const testLogFile = "_logtest.log"
 const now int64 = 1234567890123456789
 
-func newLogRecord(lvl level, src string, msg string) *LogRecord {
+func newLogRecord(lvl LogLevel, src string, msg string) *LogRecord {
 	return &LogRecord{
 		Level:   lvl,
 		Source:  src,
@@ -139,6 +139,23 @@ func TestFileLogWriter(t *testing.T) {
 		t.Errorf("malformed filelog: %q (%d bytes)", string(contents), len(contents))
 	}
 }
+
+func TestSysLogWriter(t *testing.T) {
+	defer func(buflen int) {
+		LogBufferLength = buflen
+	}(LogBufferLength)
+	LogBufferLength = 0
+
+	w := NewSysLogWriter()
+	if w == nil {
+		t.Fatalf("Invalid return: w should not be nil")
+	}
+
+	w.LogWrite(newLogRecord(CRITICAL, "source", "message"))
+	w.Close()
+	runtime.Gosched()
+}
+
 
 func TestXMLLogWriter(t *testing.T) {
 	defer func(buflen int) {

@@ -6,6 +6,7 @@ GOFILES=\
 	config.go\
 	termlog.go\
 	socklog.go\
+	syslog.go\
 	filelog.go\
 	pattlog.go\
 	wrapper.go\
