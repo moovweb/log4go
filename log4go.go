@@ -64,6 +64,7 @@ const (
 // These are the integer logging levels used by the logger
 type LogLevel int
 
+const INGORE LogLevel = -1
 const (
 	FINEST LogLevel = iota
 	FINE
@@ -79,13 +80,24 @@ const (
 // Logging level strings
 var (
 	levelStrings = [...]string{"FNST", "FINE", "DEBG", "TRAC", "INFO", "WARN", "EROR", "CRIT"}
+	levelFullStrings = [...]string{"FINEST", "FINE", "DEBUG", "TRACK", "INFO", "WARNING", "ERROR", "CRITICAL"}
 )
 
 func (l LogLevel) String() string {
 	if l < 0 || int(l) > len(levelStrings) {
-		return "UNKNOWN"
+		return "IGNORE"
 	}
 	return levelStrings[int(l)]
+}
+
+func LevelStringToLevel(level string) int {
+	level = strings.ToUpper(level)
+	for i, val := range(levelFullStrings) {
+		if val == level {
+			return i
+		}
+	}
+	return int(INGORE)
 }
 
 /****** Variables ******/
