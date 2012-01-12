@@ -49,6 +49,11 @@ func NewSysLogWriter() (w SysLogWriter) {
 	}
 	w = SysLogWriter(make(chan *LogRecord, LogBufferLength))
 	go func() {
+		defer func() {
+			if sock != nil {
+				sock.Close()
+			}
+		}()
 		for rec := range w {
 			fmt.Fprintf(sock, FormatLogRecord("%S:[%D %T]%L: %M", rec))
 		}
