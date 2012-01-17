@@ -18,10 +18,11 @@ type LogConfig struct {
 	LogFile string
 }
 
-func NewLoggerFromConfig(logConfig *LogConfig) (logger Logger) {
+func NewLoggerFromConfig(logConfig *LogConfig, prefix string) (logger Logger) {
 	logger = make(Logger)
 	if logConfig.ConsoleLogLevel > 0 {
 		logger.AddFilter("stdout", LogLevel(logConfig.ConsoleLogLevel), NewConsoleLogWriter())
+		logger["stdout"].Prefix = prefix
 	}
 	
 	if logConfig.FileLogLevel > 0 {
@@ -145,7 +146,7 @@ func (log Logger) LoadConfiguration(filename string) {
 			continue
 		}
 
-		log[xmlfilt.Tag] = &Filter{lvl, filt}
+		log[xmlfilt.Tag] = &Filter{lvl, "", filt}
 	}
 }
 

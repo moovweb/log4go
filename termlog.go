@@ -25,9 +25,9 @@ func (w ConsoleLogWriter) run(out io.Writer) {
 	for rec := range w {
 		if rec.Created != timestrAt {
 			tm := TimeConversionFunction(rec.Created / 1e9)
-			timestr, timestrAt = tm.Format("01/02/06 15:04:05"), rec.Created/1e9
+			timestr, timestrAt = tm.Format("15:04:05"), rec.Created/1e9
 		}
-		fmt.Fprint(out, "[", timestr, "] [", levelStrings[rec.Level], "] ", rec.Message, "\n")
+		fmt.Fprint(out, "    ", levelStrings[rec.Level], " ", timestr, " ", rec.Prefix, ": ", rec.Message, "\n")
 	}
 }
 

@@ -114,6 +114,7 @@ type LogRecord struct {
 	Level   LogLevel  // The log level
 	Created int64  // The time at which the log message was created (nanoseconds)
 	Source  string // The message source
+	Prefix  string // The log message
 	Message string // The log message
 }
 
@@ -134,7 +135,8 @@ type LogWriter interface {
 // A Filter represents the log level below which no log records are written to
 // the associated LogWriter.
 type Filter struct {
-	Level LogLevel
+	Level  LogLevel
+	Prefix string
 	LogWriter
 }
 
@@ -157,7 +159,7 @@ func NewLogger() Logger {
 func NewConsoleLogger(lvl LogLevel) Logger {
 	os.Stderr.WriteString("warning: use of deprecated NewConsoleLogger\n")
 	return Logger{
-		"stdout": &Filter{lvl, NewConsoleLogWriter()},
+		"stdout": &Filter{lvl, "", NewConsoleLogWriter()},
 	}
 }
 
@@ -165,7 +167,7 @@ func NewConsoleLogger(lvl LogLevel) Logger {
 // or above lvl to standard output.
 func NewDefaultLogger(lvl LogLevel) Logger {
 	return Logger{
-		"stdout": &Filter{lvl, NewConsoleLogWriter()},
+		"stdout": &Filter{lvl, "", NewConsoleLogWriter()},
 	}
 }
 
@@ -185,7 +187,7 @@ func (log Logger) Close() {
 // higher.  This function should not be called from multiple goroutines.
 // Returns the logger for chaining.
 func (log Logger) AddFilter(name string, lvl LogLevel, writer LogWriter) Logger {
-	log[name] = &Filter{lvl, writer}
+	log[name] = &Filter{lvl, "", writer}
 	return log
 }
 
@@ -193,11 +195,13 @@ func (log Logger) AddFilter(name string, lvl LogLevel, writer LogWriter) Logger 
 // Send a formatted log message internally
 func (log Logger) intLogf(lvl LogLevel, format string, args ...interface{}) {
 	skip := true
+	prefix := ""
 
 	// Determine if any logging will be done
 	for _, filt := range log {
 		if lvl >= filt.Level {
 			skip = false
+			prefix = filt.Prefix
 			break
 		}
 	}
@@ -222,6 +226,7 @@ func (log Logger) intLogf(lvl LogLevel, format string, args ...interface{}) {
 		Level:   lvl,
 		Created: time.Nanoseconds(),
 		Source:  src,
+		Prefix:  prefix,
 		Message: msg,
 	}
 
