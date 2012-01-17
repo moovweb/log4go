@@ -16,6 +16,8 @@ type LogConfig struct {
 	SysLogLevel int
 	FileLogLevel int
 	LogFile string
+	File2LogLevel int
+	LogFile2 string
 }
 
 func NewLoggerFromConfig(logConfig *LogConfig, prefix string) (logger Logger) {
@@ -29,6 +31,10 @@ func NewLoggerFromConfig(logConfig *LogConfig, prefix string) (logger Logger) {
 		logger.AddFilter("logfile", LogLevel(logConfig.FileLogLevel), NewFileLogWriter(logConfig.LogFile, false)) 
 	}
 	
+	if logConfig.File2LogLevel > 0 {
+		logger.AddFilter("logfile2", LogLevel(logConfig.File2LogLevel), NewFileLogWriter(logConfig.LogFile2, false)) 
+	}
+
 	if logConfig.SysLogLevel > 0 {
 		logger.AddFilter("syslog", LogLevel(logConfig.SysLogLevel), NewSysLogWriter()) 
 	}
