@@ -54,8 +54,14 @@ func NewSysLogWriter() (w SysLogWriter) {
 				sock.Close()
 			}
 		}()
+		var timestr string
+		var timestrAt int64
 		for rec := range w {
-			fmt.Fprintf(sock, FormatLogRecord("%S:[%D %T]%L: %M", rec))
+			if rec.Created != timestrAt {
+				tm := TimeConversionFunction(rec.Created / 1e9)
+				timestr, timestrAt = fmt.Sprintf("%04d/%02d/%02d %02d:%02d:%02d %s", tm.Year, tm.Month, tm.Day, tm.Hour, tm.Minute, tm.Second, tm.Zone), rec.Created/1e9
+			}
+			fmt.Fprint(sock, rec.Prefix, ":", levelStrings[rec.Level], " ", timestr, " ", rec.Prefix, ": ", rec.Message, "\n")
 		}
 	}()
 	return
