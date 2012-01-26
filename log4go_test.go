@@ -91,7 +91,7 @@ var logRecordWriteTests = []struct {
 			Message: "message",
 			Created: now,
 		},
-		Console: "[02/13/09 23:31:30] [CRIT] message\n",
+		Console: "CRIT 2009/02/13 23:31:30 UTC : message\n",
 	},
 }
 
@@ -148,7 +148,7 @@ func TestSysLog(t *testing.T) {
 	
 	sl := make(Logger)
 	sl.AddFilter("stdout", DEBUG, w)
-	sl.Log(DEBUG, "TestSysLog", "This message is level DEBUG")
+	sl.Log(INFO, "TestSysLog", "This message is level INFO")
 	sl.Debug("This message is level %s", DEBUG)
 	w.Close()
 	runtime.Gosched()
@@ -301,7 +301,7 @@ func TestCountMallocs(t *testing.T) {
 		sl.Log(WARNING, "here", "This is a WARNING message")
 	}
 	mallocs += runtime.MemStats.Mallocs
-	fmt.Printf("mallocs per sl.Log((WARNING, \"here\", \"This is a log message\"): %d\n", mallocs/N)
+	//fmt.Printf("mallocs per sl.Log((WARNING, \"here\", \"This is a log message\"): %d\n", mallocs/N)
 
 	// Console logger formatted
 	mallocs = 0 - runtime.MemStats.Mallocs
@@ -309,7 +309,7 @@ func TestCountMallocs(t *testing.T) {
 		sl.Logf(WARNING, "%s is a log message with level %d", "This", WARNING)
 	}
 	mallocs += runtime.MemStats.Mallocs
-	fmt.Printf("mallocs per sl.Logf(WARNING, \"%%s is a log message with level %%d\", \"This\", WARNING): %d\n", mallocs/N)
+	//fmt.Printf("mallocs per sl.Logf(WARNING, \"%%s is a log message with level %%d\", \"This\", WARNING): %d\n", mallocs/N)
 
 	// Console logger (not logged)
 	sl = NewDefaultLogger(INFO)
@@ -318,7 +318,7 @@ func TestCountMallocs(t *testing.T) {
 		sl.Log(DEBUG, "here", "This is a DEBUG log message")
 	}
 	mallocs += runtime.MemStats.Mallocs
-	fmt.Printf("mallocs per unlogged sl.Log((WARNING, \"here\", \"This is a log message\"): %d\n", mallocs/N)
+	//fmt.Printf("mallocs per unlogged sl.Log((WARNING, \"here\", \"This is a log message\"): %d\n", mallocs/N)
 
 	// Console logger formatted (not logged)
 	mallocs = 0 - runtime.MemStats.Mallocs
@@ -326,7 +326,7 @@ func TestCountMallocs(t *testing.T) {
 		sl.Logf(DEBUG, "%s is a log message with level %d", "This", DEBUG)
 	}
 	mallocs += runtime.MemStats.Mallocs
-	fmt.Printf("mallocs per unlogged sl.Logf(WARNING, \"%%s is a log message with level %%d\", \"This\", WARNING): %d\n", mallocs/N)
+	//fmt.Printf("mallocs per unlogged sl.Logf(WARNING, \"%%s is a log message with level %%d\", \"This\", WARNING): %d\n", mallocs/N)
 }
 
 func TestXMLConfig(t *testing.T) {
