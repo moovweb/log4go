@@ -18,6 +18,7 @@ type LogConfig struct {
 	LogFile string
 	File2LogLevel int
 	LogFile2 string
+	SyslogFacility int
 }
 
 func NewLoggerFromConfig(logConfig *LogConfig, prefix string) (logger Logger) {
@@ -36,7 +37,7 @@ func NewLoggerFromConfig(logConfig *LogConfig, prefix string) (logger Logger) {
 	}
 
 	if logConfig.SysLogLevel > 0 {
-		logger.AddFilter("syslog", LogLevel(logConfig.SysLogLevel), NewSysLogWriter()) 
+		logger.AddFilter("syslog", LogLevel(logConfig.SysLogLevel), NewSysLogWriter(logConfig.SyslogFacility)) 
 	}
 	return
 }
@@ -102,22 +103,22 @@ func (log Logger) LoadConfiguration(filename string) {
 		}
 
 		switch xmlfilt.Level {
-		case "FINEST":
-			lvl = FINEST
-		case "FINE":
-			lvl = FINE
 		case "DEBUG":
 			lvl = DEBUG
-		case "TRACE":
-			lvl = TRACE
 		case "INFO":
 			lvl = INFO
+		case "NOTICE":
+			lvl = NOTICE
 		case "WARNING":
 			lvl = WARNING
 		case "ERROR":
 			lvl = ERROR
 		case "CRITICAL":
 			lvl = CRITICAL
+		case "ALERT":
+			lvl = ALERT
+		case "EMERGNECY":
+			lvl = EMERGENCY
 		default:
 			fmt.Fprintf(os.Stderr, "LoadConfiguration: Error: Required child <%s> for filter has unknown value in %s: %s\n", "level", filename, xmlfilt.Level)
 			bad = true

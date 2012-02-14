@@ -66,21 +66,21 @@ type LogLevel int
 
 const INGORE LogLevel = -1
 const (
-	FINEST LogLevel = iota
-	FINE
-	DEBUG
-	TRACE
-	INFO
-	WARNING
-	ERROR
+	EMERGENCY LogLevel = iota
+	ALERT
 	CRITICAL
+	ERROR
+	WARNING
+	NOTICE
+	INFO
+	DEBUG
 )
 
 
 // Logging level strings
 var (
-	levelStrings = [...]string{"FNST", "FINE", "DEBG", "TRAC", "INFO", "WARN", "EROR", "CRIT"}
-	levelFullStrings = [...]string{"FINEST", "FINE", "DEBUG", "TRACK", "INFO", "WARNING", "ERROR", "CRITICAL"}
+	levelStrings = [...]string{"EMEG", "ALRT", "CRIT", "EROR", "WARN", "NOTC", "INFO", "DEBG"}
+	levelFullStrings = [...]string{"EMERGENCY", "ALERT", "CRITICAL", "ERROR", "WARNING", "NOTICE", "INFO", "DEBUG"}
 )
 
 func (l LogLevel) String() string {
@@ -199,7 +199,7 @@ func (log Logger) intLogf(lvl LogLevel, format string, args ...interface{}) {
 
 	// Determine if any logging will be done
 	for _, filt := range log {
-		if lvl >= filt.Level {
+		if lvl <= filt.Level {
 			skip = false
 			prefix = filt.Prefix
 			break
@@ -232,7 +232,7 @@ func (log Logger) intLogf(lvl LogLevel, format string, args ...interface{}) {
 
 	// Dispatch the logs
 	for _, filt := range log {
-		if lvl < filt.Level {
+		if lvl >= filt.Level {
 			continue
 		}
 		filt.LogWrite(rec)
@@ -245,7 +245,7 @@ func (log Logger) intLogc(lvl LogLevel, closure func() string) {
 
 	// Determine if any logging will be done
 	for _, filt := range log {
-		if lvl >= filt.Level {
+		if lvl <= filt.Level {
 			skip = false
 			break
 		}
@@ -271,7 +271,7 @@ func (log Logger) intLogc(lvl LogLevel, closure func() string) {
 
 	// Dispatch the logs
 	for _, filt := range log {
-		if lvl < filt.Level {
+		if lvl >= filt.Level {
 			continue
 		}
 		filt.LogWrite(rec)
@@ -284,7 +284,7 @@ func (log Logger) Log(lvl LogLevel, source, message string) {
 
 	// Determine if any logging will be done
 	for _, filt := range log {
-		if lvl >= filt.Level {
+		if lvl <= filt.Level {
 			skip = false
 			break
 		}
@@ -303,7 +303,7 @@ func (log Logger) Log(lvl LogLevel, source, message string) {
 
 	// Dispatch the logs
 	for _, filt := range log {
-		if lvl < filt.Level {
+		if lvl >= filt.Level {
 			continue
 		}
 		filt.LogWrite(rec)
@@ -320,44 +320,6 @@ func (log Logger) Logf(lvl LogLevel, format string, args ...interface{}) {
 // its source.  If no log message would be written, the closure is never called.
 func (log Logger) Logc(lvl LogLevel, closure func() string) {
 	log.intLogc(lvl, closure)
-}
-
-// Finest logs a message at the finest log level.
-// See Debug for an explanation of the arguments.
-func (log Logger) Finest(arg0 interface{}, args ...interface{}) {
-	const (
-		lvl = FINEST
-	)
-	switch first := arg0.(type) {
-	case string:
-		// Use the string as a format string
-		log.intLogf(lvl, first, args...)
-	case func() string:
-		// Log the closure (no other arguments used)
-		log.intLogc(lvl, first)
-	default:
-		// Build a format string so that it will be similar to Sprint
-		log.intLogf(lvl, fmt.Sprint(arg0)+strings.Repeat(" %v", len(args)), args...)
-	}
-}
-
-// Fine logs a message at the fine log level.
-// See Debug for an explanation of the arguments.
-func (log Logger) Fine(arg0 interface{}, args ...interface{}) {
-	const (
-		lvl = FINE
-	)
-	switch first := arg0.(type) {
-	case string:
-		// Use the string as a format string
-		log.intLogf(lvl, first, args...)
-	case func() string:
-		// Log the closure (no other arguments used)
-		log.intLogc(lvl, first)
-	default:
-		// Build a format string so that it will be similar to Sprint
-		log.intLogf(lvl, fmt.Sprint(arg0)+strings.Repeat(" %v", len(args)), args...)
-	}
 }
 
 // Debug is a utility method for debug log messages.
@@ -389,11 +351,11 @@ func (log Logger) Debug(arg0 interface{}, args ...interface{}) {
 	}
 }
 
-// Trace logs a message at the trace log level.
+// Info logs a message at the info log level.
 // See Debug for an explanation of the arguments.
-func (log Logger) Trace(arg0 interface{}, args ...interface{}) {
+func (log Logger) Info(arg0 interface{}, args ...interface{}) {
 	const (
-		lvl = TRACE
+		lvl = INFO
 	)
 	switch first := arg0.(type) {
 	case string:
@@ -408,11 +370,11 @@ func (log Logger) Trace(arg0 interface{}, args ...interface{}) {
 	}
 }
 
-// Info logs a message at the info log level.
+// Notice logs a message at the trace log level.
 // See Debug for an explanation of the arguments.
-func (log Logger) Info(arg0 interface{}, args ...interface{}) {
+func (log Logger) Notice(arg0 interface{}, args ...interface{}) {
 	const (
-		lvl = INFO
+		lvl = NOTICE
 	)
 	switch first := arg0.(type) {
 	case string:
@@ -481,6 +443,52 @@ func (log Logger) Error(arg0 interface{}, args ...interface{}) os.Error {
 func (log Logger) Critical(arg0 interface{}, args ...interface{}) os.Error {
 	const (
 		lvl = CRITICAL
+	)
+	var msg string
+	switch first := arg0.(type) {
+	case string:
+		// Use the string as a format string
+		msg = fmt.Sprintf(first, args...)
+	case func() string:
+		// Log the closure (no other arguments used)
+		msg = first()
+	default:
+		// Build a format string so that it will be similar to Sprint
+		msg = fmt.Sprintf(fmt.Sprint(first)+strings.Repeat(" %v", len(args)), args...)
+	}
+	log.intLogf(lvl, msg)
+	return os.NewError(msg)
+}
+
+// Alert logs a message at the critical log level and returns the formatted error,
+// See Warn for an explanation of the performance and Debug for an explanation
+// of the parameters.
+func (log Logger) Alert(arg0 interface{}, args ...interface{}) os.Error {
+	const (
+		lvl = ALERT
+	)
+	var msg string
+	switch first := arg0.(type) {
+	case string:
+		// Use the string as a format string
+		msg = fmt.Sprintf(first, args...)
+	case func() string:
+		// Log the closure (no other arguments used)
+		msg = first()
+	default:
+		// Build a format string so that it will be similar to Sprint
+		msg = fmt.Sprintf(fmt.Sprint(first)+strings.Repeat(" %v", len(args)), args...)
+	}
+	log.intLogf(lvl, msg)
+	return os.NewError(msg)
+}
+
+// Emergency logs a message at the critical log level and returns the formatted error,
+// See Warn for an explanation of the performance and Debug for an explanation
+// of the parameters.
+func (log Logger) Emergency(arg0 interface{}, args ...interface{}) os.Error {
+	const (
+		lvl = EMERGENCY
 	)
 	var msg string
 	switch first := arg0.(type) {

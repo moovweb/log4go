@@ -34,7 +34,7 @@ var formatCache = &formatCacheType{}
 // %t - Time (15:04)
 // %D - Date (2006/01/02)
 // %d - Date (01/02/06)
-// %L - Level (FNST, FINE, DEBG, TRAC, WARN, EROR, CRIT)
+// %L - Level (DEBG, NOTI, WARN, EROR, CRIT)
 // %S - Source
 // %M - Message
 // Ignores unknown formats

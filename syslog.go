@@ -6,6 +6,18 @@ import (
 	"os"
 	"fmt"
 	"net"
+	"time"
+)
+
+const (
+	LOCAL0 = 16
+	LOCAL1 = 17
+	LOCAL2 = 18
+	LOCAL3 = 19
+	LOCAL4 = 20
+	LOCAL5 = 21
+	LOCAL6 = 22
+	LOCAL7 = 23
 )
 
 // This log writer sends output to a socket
@@ -41,10 +53,16 @@ func connectSyslogDaemon() (sock net.Conn, err os.Error) {
 	return
 }
 
-func NewSysLogWriter() (w SysLogWriter) {
+func NewSysLogWriter(facility int) (w SysLogWriter) {
+	offset := facility * 8
+	host, err := os.Hostname()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "cannot obtain hostname: %s\n", err.String())
+		host = "unknown"
+	}
 	sock, err := connectSyslogDaemon()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "NewSysLogWriter: %s\n", err)
+		fmt.Fprintf(os.Stderr, "NewSysLogWriter: %s\n", err.String())
 		return
 	}
 	w = SysLogWriter(make(chan *LogRecord, LogBufferLength))
@@ -58,10 +76,11 @@ func NewSysLogWriter() (w SysLogWriter) {
 		var timestrAt int64
 		for rec := range w {
 			if rec.Created != timestrAt {
-				tm := TimeConversionFunction(rec.Created / 1e9)
-				timestr, timestrAt = fmt.Sprintf("%04d/%02d/%02d %02d:%02d:%02d %s", tm.Year, tm.Month, tm.Day, tm.Hour, tm.Minute, tm.Second, tm.Zone), rec.Created/1e9
+				timestrAt = rec.Created/1e9
+				timestr = time.SecondsToUTC(timestrAt).Format(time.RFC3339)
 			}
-			fmt.Fprint(sock, rec.Prefix, ":", levelStrings[rec.Level], " ", timestr, " ", rec.Prefix, ": ", rec.Message, "\n")
+			fmt.Fprintf(sock, "<%d>%s %s %s: %s\n", offset + int(rec.Level), timestr, host, rec.Prefix, rec.Message)
+			fmt.Fprintf(os.Stdout, "<%d>%s %s %s: %s\n", offset + int(rec.Level), timestr, host, rec.Prefix, rec.Message)
 		}
 	}()
 	return

@@ -141,7 +141,7 @@ func TestFileLogWriter(t *testing.T) {
 }
 
 func TestSysLog(t *testing.T) {
-	w := NewSysLogWriter()
+	w := NewSysLogWriter(LOCAL4)
 	if w == nil {
 		t.Fatalf("Invalid return: w should not be nil")
 	}
@@ -160,7 +160,7 @@ func TestSysLogWriter(t *testing.T) {
 	}(LogBufferLength)
 	LogBufferLength = 0
 
-	w := NewSysLogWriter()
+	w := NewSysLogWriter(LOCAL4)
 	if w == nil {
 		t.Fatalf("Invalid return: w should not be nil")
 	}
@@ -250,7 +250,7 @@ func TestLogger(t *testing.T) {
 
 func TestLogOutput(t *testing.T) {
 	const (
-		expected = "fdf3e51e444da56b4cb400f30bc47424"
+		expected = "ec692959e3b871c4b57fff3afc95216f"
 	)
 
 	// Unbuffered output
@@ -262,7 +262,7 @@ func TestLogOutput(t *testing.T) {
 	l := make(Logger)
 
 	// Delete and open the output log without a timestamp (for a constant md5sum)
-	l.AddFilter("file", FINEST, NewFileLogWriter(testLogFile, false).SetFormat("[%L] %M"))
+	l.AddFilter("file", DEBUG, NewFileLogWriter(testLogFile, false).SetFormat("[%L] %M"))
 	defer os.Remove(testLogFile)
 
 	// Send some log messages
@@ -270,11 +270,11 @@ func TestLogOutput(t *testing.T) {
 	l.Logf(ERROR, "This message is level %v", ERROR)
 	l.Logf(WARNING, "This message is level %s", WARNING)
 	l.Logc(INFO, func() string { return "This message is level INFO" })
-	l.Trace("This message is level %d", int(TRACE))
+	l.Notice("This message is level %d", int(NOTICE))
 	l.Debug("This message is level %s", DEBUG)
-	l.Fine(func() string { return fmt.Sprintf("This message is level %v", FINE) })
-	l.Finest("This message is level %v", FINEST)
-	l.Finest(FINEST, "is also this message's level")
+	l.Alert(func() string { return fmt.Sprintf("This message is level %v", ALERT) })
+	l.Emergency("This message is level %v", EMERGENCY)
+	l.Emergency(EMERGENCY, "is also this message's level")
 
 	l.Close()
 
@@ -323,7 +323,7 @@ func TestCountMallocs(t *testing.T) {
 	// Console logger formatted (not logged)
 	mallocs = 0 - runtime.MemStats.Mallocs
 	for i := 0; i < N; i++ {
-		sl.Logf(DEBUG, "%s is a log message with level %d", "This", DEBUG)
+		sl.Logf(DEBUG, "%s is a log message with level %s", "This", DEBUG)
 	}
 	mallocs += runtime.MemStats.Mallocs
 	//fmt.Printf("mallocs per unlogged sl.Logf(WARNING, \"%%s is a log message with level %%d\", \"This\", WARNING): %d\n", mallocs/N)
@@ -343,13 +343,13 @@ func TestXMLConfig(t *testing.T) {
 	fmt.Fprintln(fd, "  <filter enabled=\"true\">")
 	fmt.Fprintln(fd, "    <tag>stdout</tag>")
 	fmt.Fprintln(fd, "    <type>console</type>")
-	fmt.Fprintln(fd, "    <!-- level is (:?FINEST|FINE|DEBUG|TRACE|INFO|WARNING|ERROR) -->")
+	fmt.Fprintln(fd, "    <!-- level is (:?DEBUG|INFO|NOTICE|WARNING|ERROR|CRITICAL|ALERT|EMERGENCY) -->")
 	fmt.Fprintln(fd, "    <level>DEBUG</level>")
 	fmt.Fprintln(fd, "  </filter>")
 	fmt.Fprintln(fd, "  <filter enabled=\"true\">")
 	fmt.Fprintln(fd, "    <tag>file</tag>")
 	fmt.Fprintln(fd, "    <type>file</type>")
-	fmt.Fprintln(fd, "    <level>FINEST</level>")
+	fmt.Fprintln(fd, "    <level>ALERT</level>")
 	fmt.Fprintln(fd, "    <property name=\"filename\">test.log</property>")
 	fmt.Fprintln(fd, "    <!--")
 	fmt.Fprintln(fd, "       %T - Time (15:04:05 MST)")
@@ -371,7 +371,7 @@ func TestXMLConfig(t *testing.T) {
 	fmt.Fprintln(fd, "  <filter enabled=\"true\">")
 	fmt.Fprintln(fd, "    <tag>xmllog</tag>")
 	fmt.Fprintln(fd, "    <type>xml</type>")
-	fmt.Fprintln(fd, "    <level>TRACE</level>")
+	fmt.Fprintln(fd, "    <level>NOTICE</level>")
 	fmt.Fprintln(fd, "    <property name=\"filename\">trace.xml</property>")
 	fmt.Fprintln(fd, "    <property name=\"rotate\">true</property> <!-- true enables log rotation, otherwise append -->")
 	fmt.Fprintln(fd, "    <property name=\"maxsize\">100M</property> <!-- \\d+[KMG]? Suffixes are in terms of 2**10 -->")
@@ -381,7 +381,7 @@ func TestXMLConfig(t *testing.T) {
 	fmt.Fprintln(fd, "  <filter enabled=\"false\"><!-- enabled=false means this logger won'testing actually be created -->")
 	fmt.Fprintln(fd, "    <tag>donotopen</tag>")
 	fmt.Fprintln(fd, "    <type>socket</type>")
-	fmt.Fprintln(fd, "    <level>FINEST</level>")
+	fmt.Fprintln(fd, "    <level>CRITICAL</level>")
 	fmt.Fprintln(fd, "    <property name=\"endpoint\">192.168.1.255:12124</property> <!-- recommend UDP broadcast -->")
 	fmt.Fprintln(fd, "    <property name=\"protocol\">udp</property> <!-- tcp or udp -->")
 	fmt.Fprintln(fd, "  </filter>")
@@ -425,11 +425,11 @@ func TestXMLConfig(t *testing.T) {
 	if lvl := log["stdout"].Level; lvl != DEBUG {
 		t.Errorf("XMLConfig: Expected stdout to be set to level %d, found %d", DEBUG, lvl)
 	}
-	if lvl := log["file"].Level; lvl != FINEST {
-		t.Errorf("XMLConfig: Expected file to be set to level %d, found %d", FINEST, lvl)
+	if lvl := log["file"].Level; lvl != ALERT {
+		t.Errorf("XMLConfig: Expected file to be set to level %d, found %d", ALERT, lvl)
 	}
-	if lvl := log["xmllog"].Level; lvl != TRACE {
-		t.Errorf("XMLConfig: Expected xmllog to be set to level %d, found %d", TRACE, lvl)
+	if lvl := log["xmllog"].Level; lvl != NOTICE {
+		t.Errorf("XMLConfig: Expected xmllog to be set to level %d, found %d", NOTICE, lvl)
 	}
 
 	// Make sure the w is open and points to the right file
