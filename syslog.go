@@ -80,7 +80,6 @@ func NewSysLogWriter(facility int) (w SysLogWriter) {
 				timestr = time.SecondsToUTC(timestrAt).Format(time.RFC3339)
 			}
 			fmt.Fprintf(sock, "<%d>%s %s %s: %s\n", offset + int(rec.Level), timestr, host, rec.Prefix, rec.Message)
-			fmt.Fprintf(os.Stdout, "<%d>%s %s %s: %s\n", offset + int(rec.Level), timestr, host, rec.Prefix, rec.Message)
 		}
 	}()
 	return

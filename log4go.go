@@ -215,7 +215,6 @@ func (log Logger) intLogf(lvl LogLevel, format string, args ...interface{}) {
 	if ok {
 		src = fmt.Sprintf("%s:%d", runtime.FuncForPC(pc).Name(), lineno)
 	}
-
 	msg := format
 	if len(args) > 0 {
 		msg = fmt.Sprintf(format, args...)
@@ -229,10 +228,9 @@ func (log Logger) intLogf(lvl LogLevel, format string, args ...interface{}) {
 		Prefix:  prefix,
 		Message: msg,
 	}
-
 	// Dispatch the logs
 	for _, filt := range log {
-		if lvl >= filt.Level {
+		if lvl > filt.Level {
 			continue
 		}
 		filt.LogWrite(rec)
@@ -271,7 +269,7 @@ func (log Logger) intLogc(lvl LogLevel, closure func() string) {
 
 	// Dispatch the logs
 	for _, filt := range log {
-		if lvl >= filt.Level {
+		if lvl > filt.Level {
 			continue
 		}
 		filt.LogWrite(rec)
@@ -303,7 +301,7 @@ func (log Logger) Log(lvl LogLevel, source, message string) {
 
 	// Dispatch the logs
 	for _, filt := range log {
-		if lvl >= filt.Level {
+		if lvl > filt.Level {
 			continue
 		}
 		filt.LogWrite(rec)
