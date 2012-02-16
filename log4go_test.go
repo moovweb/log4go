@@ -16,7 +16,10 @@ import (
 )
 
 const testLogFile = "_logtest.log"
-const now int64 = 1234567890123456789
+
+var (
+	now, _ = time.Parse("02 Jan 2006 15:04:05", "13 Feb 2009 23:31:30")
+)
 
 func newLogRecord(lvl LogLevel, src string, msg string) *LogRecord {
 	return &LogRecord{
@@ -28,8 +31,6 @@ func newLogRecord(lvl LogLevel, src string, msg string) *LogRecord {
 }
 
 func TestELog(t *testing.T) {
-	TimeConversionFunction = time.SecondsToUTC
-
 	fmt.Printf("Testing %s\n", L4G_VERSION)
 	lr := newLogRecord(CRITICAL, "log4go_test", "message")
 	if lr.Level != CRITICAL {
@@ -91,7 +92,7 @@ var logRecordWriteTests = []struct {
 			Message: "message",
 			Created: now,
 		},
-		Console: "CRIT 2009/02/13 23:31:30 UTC : message\n",
+		Console: "CRIT Fri, 13 Feb 2009 23:31:30 UTC : message\n",
 	},
 }
 
@@ -145,7 +146,7 @@ func TestSysLog(t *testing.T) {
 	if w == nil {
 		t.Fatalf("Invalid return: w should not be nil")
 	}
-	
+
 	sl := make(Logger)
 	sl.AddFilter("stdout", DEBUG, w)
 	sl.Log(INFO, "TestSysLog", "This message is level INFO")
@@ -169,7 +170,6 @@ func TestSysLogWriter(t *testing.T) {
 	w.Close()
 	runtime.Gosched()
 }
-
 
 func TestXMLLogWriter(t *testing.T) {
 	defer func(buflen int) {
@@ -223,17 +223,17 @@ func TestLogger(t *testing.T) {
 	}
 
 	//func (l *Logger) Warn(format string, args ...interface{}) os.Error {}
-	if err := l.Warn("%s %d %#v", "Warning:", 1, []int{}); err.String() != "Warning: 1 []int{}" {
+	if err := l.Warn("%s %d %#v", "Warning:", 1, []int{}); err.Error() != "Warning: 1 []int{}" {
 		t.Errorf("Warn returned invalid error: %s", err)
 	}
 
 	//func (l *Logger) Error(format string, args ...interface{}) os.Error {}
-	if err := l.Error("%s %d %#v", "Error:", 10, []string{}); err.String() != "Error: 10 []string{}" {
+	if err := l.Error("%s %d %#v", "Error:", 10, []string{}); err.Error() != "Error: 10 []string{}" {
 		t.Errorf("Error returned invalid error: %s", err)
 	}
 
 	//func (l *Logger) Critical(format string, args ...interface{}) os.Error {}
-	if err := l.Critical("%s %d %#v", "Critical:", 100, []int64{}); err.String() != "Critical: 100 []int64{}" {
+	if err := l.Critical("%s %d %#v", "Critical:", 100, []int64{}); err.Error() != "Critical: 100 []int64{}" {
 		t.Errorf("Critical returned invalid error: %s", err)
 	}
 
@@ -285,169 +285,33 @@ func TestLogOutput(t *testing.T) {
 
 	sum := md5.New()
 	sum.Write(contents)
-	if sumstr := hex.EncodeToString(sum.Sum()); sumstr != expected {
+	if sumstr := hex.EncodeToString(sum.Sum(nil)); sumstr != expected {
 		t.Errorf("--- Log Contents:\n%s---", string(contents))
 		t.Fatalf("Checksum does not match: %s (expecting %s)", sumstr, expected)
 	}
 }
 
 func TestCountMallocs(t *testing.T) {
-	const N = 1
-
+	const N = 1	
 	// Console logger
 	sl := NewDefaultLogger(INFO)
-	mallocs := 0 - runtime.MemStats.Mallocs
 	for i := 0; i < N; i++ {
 		sl.Log(WARNING, "here", "This is a WARNING message")
 	}
-	mallocs += runtime.MemStats.Mallocs
-	//fmt.Printf("mallocs per sl.Log((WARNING, \"here\", \"This is a log message\"): %d\n", mallocs/N)
-
-	// Console logger formatted
-	mallocs = 0 - runtime.MemStats.Mallocs
 	for i := 0; i < N; i++ {
 		sl.Logf(WARNING, "%s is a log message with level %d", "This", WARNING)
 	}
-	mallocs += runtime.MemStats.Mallocs
-	//fmt.Printf("mallocs per sl.Logf(WARNING, \"%%s is a log message with level %%d\", \"This\", WARNING): %d\n", mallocs/N)
-
-	// Console logger (not logged)
-	sl = NewDefaultLogger(INFO)
-	mallocs = 0 - runtime.MemStats.Mallocs
 	for i := 0; i < N; i++ {
 		sl.Log(DEBUG, "here", "This is a DEBUG log message")
 	}
-	mallocs += runtime.MemStats.Mallocs
-	//fmt.Printf("mallocs per unlogged sl.Log((WARNING, \"here\", \"This is a log message\"): %d\n", mallocs/N)
-
-	// Console logger formatted (not logged)
-	mallocs = 0 - runtime.MemStats.Mallocs
 	for i := 0; i < N; i++ {
 		sl.Logf(DEBUG, "%s is a log message with level %s", "This", DEBUG)
 	}
-	mallocs += runtime.MemStats.Mallocs
-	//fmt.Printf("mallocs per unlogged sl.Logf(WARNING, \"%%s is a log message with level %%d\", \"This\", WARNING): %d\n", mallocs/N)
-}
-
-func TestXMLConfig(t *testing.T) {
-	const (
-		configfile = "example.xml"
-	)
-
-	fd, err := os.Create(configfile)
-	if err != nil {
-		t.Fatalf("Could not open %s for writing: %s", configfile, err)
-	}
-
-	fmt.Fprintln(fd, "<logging>")
-	fmt.Fprintln(fd, "  <filter enabled=\"true\">")
-	fmt.Fprintln(fd, "    <tag>stdout</tag>")
-	fmt.Fprintln(fd, "    <type>console</type>")
-	fmt.Fprintln(fd, "    <!-- level is (:?DEBUG|INFO|NOTICE|WARNING|ERROR|CRITICAL|ALERT|EMERGENCY) -->")
-	fmt.Fprintln(fd, "    <level>DEBUG</level>")
-	fmt.Fprintln(fd, "  </filter>")
-	fmt.Fprintln(fd, "  <filter enabled=\"true\">")
-	fmt.Fprintln(fd, "    <tag>file</tag>")
-	fmt.Fprintln(fd, "    <type>file</type>")
-	fmt.Fprintln(fd, "    <level>ALERT</level>")
-	fmt.Fprintln(fd, "    <property name=\"filename\">test.log</property>")
-	fmt.Fprintln(fd, "    <!--")
-	fmt.Fprintln(fd, "       %T - Time (15:04:05 MST)")
-	fmt.Fprintln(fd, "       %testing - Time (15:04)")
-	fmt.Fprintln(fd, "       %D - Date (2006/01/02)")
-	fmt.Fprintln(fd, "       %d - Date (01/02/06)")
-	fmt.Fprintln(fd, "       %L - Level (FNST, FINE, DEBG, TRAC, WARN, EROR, CRIT)")
-	fmt.Fprintln(fd, "       %S - Source")
-	fmt.Fprintln(fd, "       %M - Message")
-	fmt.Fprintln(fd, "       It ignores unknown format strings (and removes them)")
-	fmt.Fprintln(fd, "       Recommended: \"[%D %T] [%L] (%S) %M\"")
-	fmt.Fprintln(fd, "    -->")
-	fmt.Fprintln(fd, "    <property name=\"format\">[%D %T] [%L] (%S) %M</property>")
-	fmt.Fprintln(fd, "    <property name=\"rotate\">false</property> <!-- true enables log rotation, otherwise append -->")
-	fmt.Fprintln(fd, "    <property name=\"maxsize\">0M</property> <!-- \\d+[KMG]? Suffixes are in terms of 2**10 -->")
-	fmt.Fprintln(fd, "    <property name=\"maxlines\">0K</property> <!-- \\d+[KMG]? Suffixes are in terms of thousands -->")
-	fmt.Fprintln(fd, "    <property name=\"daily\">true</property> <!-- Automatically rotates when a log message is written after midnight -->")
-	fmt.Fprintln(fd, "  </filter>")
-	fmt.Fprintln(fd, "  <filter enabled=\"true\">")
-	fmt.Fprintln(fd, "    <tag>xmllog</tag>")
-	fmt.Fprintln(fd, "    <type>xml</type>")
-	fmt.Fprintln(fd, "    <level>NOTICE</level>")
-	fmt.Fprintln(fd, "    <property name=\"filename\">trace.xml</property>")
-	fmt.Fprintln(fd, "    <property name=\"rotate\">true</property> <!-- true enables log rotation, otherwise append -->")
-	fmt.Fprintln(fd, "    <property name=\"maxsize\">100M</property> <!-- \\d+[KMG]? Suffixes are in terms of 2**10 -->")
-	fmt.Fprintln(fd, "    <property name=\"maxrecords\">6K</property> <!-- \\d+[KMG]? Suffixes are in terms of thousands -->")
-	fmt.Fprintln(fd, "    <property name=\"daily\">false</property> <!-- Automatically rotates when a log message is written after midnight -->")
-	fmt.Fprintln(fd, "  </filter>")
-	fmt.Fprintln(fd, "  <filter enabled=\"false\"><!-- enabled=false means this logger won'testing actually be created -->")
-	fmt.Fprintln(fd, "    <tag>donotopen</tag>")
-	fmt.Fprintln(fd, "    <type>socket</type>")
-	fmt.Fprintln(fd, "    <level>CRITICAL</level>")
-	fmt.Fprintln(fd, "    <property name=\"endpoint\">192.168.1.255:12124</property> <!-- recommend UDP broadcast -->")
-	fmt.Fprintln(fd, "    <property name=\"protocol\">udp</property> <!-- tcp or udp -->")
-	fmt.Fprintln(fd, "  </filter>")
-	fmt.Fprintln(fd, "</logging>")
-	fd.Close()
-
-	log := make(Logger)
-	log.LoadConfiguration(configfile)
-	defer os.Remove("trace.xml")
-	defer os.Remove("test.log")
-	defer log.Close()
-
-	// Make sure we got all loggers
-	if len(log) != 3 {
-		t.Fatalf("XMLConfig: Expected 3 filters, found %d", len(log))
-	}
-
-	// Make sure they're the right keys
-	if _, ok := log["stdout"]; !ok {
-		t.Errorf("XMLConfig: Expected stdout logger")
-	}
-	if _, ok := log["file"]; !ok {
-		t.Fatalf("XMLConfig: Expected file logger")
-	}
-	if _, ok := log["xmllog"]; !ok {
-		t.Fatalf("XMLConfig: Expected xmllog logger")
-	}
-
-	// Make sure they're the right type
-	if _, ok := log["stdout"].LogWriter.(ConsoleLogWriter); !ok {
-		t.Fatalf("XMLConfig: Expected stdout to be ConsoleLogWriter, found %T", log["stdout"].LogWriter)
-	}
-	if _, ok := log["file"].LogWriter.(*FileLogWriter); !ok {
-		t.Fatalf("XMLConfig: Expected file to be *FileLogWriter, found %T", log["file"].LogWriter)
-	}
-	if _, ok := log["xmllog"].LogWriter.(*FileLogWriter); !ok {
-		t.Fatalf("XMLConfig: Expected xmllog to be *FileLogWriter, found %T", log["xmllog"].LogWriter)
-	}
-
-	// Make sure levels are set
-	if lvl := log["stdout"].Level; lvl != DEBUG {
-		t.Errorf("XMLConfig: Expected stdout to be set to level %d, found %d", DEBUG, lvl)
-	}
-	if lvl := log["file"].Level; lvl != ALERT {
-		t.Errorf("XMLConfig: Expected file to be set to level %d, found %d", ALERT, lvl)
-	}
-	if lvl := log["xmllog"].Level; lvl != NOTICE {
-		t.Errorf("XMLConfig: Expected xmllog to be set to level %d, found %d", NOTICE, lvl)
-	}
-
-	// Make sure the w is open and points to the right file
-	if fname := log["file"].LogWriter.(*FileLogWriter).file.Name(); fname != "test.log" {
-		t.Errorf("XMLConfig: Expected file to have opened %s, found %s", "test.log", fname)
-	}
-
-	// Make sure the XLW is open and points to the right file
-	if fname := log["xmllog"].LogWriter.(*FileLogWriter).file.Name(); fname != "trace.xml" {
-		t.Errorf("XMLConfig: Expected xmllog to have opened %s, found %s", "trace.xml", fname)
-	}
-
-	// Move XML log file
-	os.Rename(configfile, "examples/"+configfile) // Keep this so that an example with the documentation is available
 }
 
 func BenchmarkFormatLogRecord(b *testing.B) {
 	const updateEvery = 1
+	interval, _ := time.ParseDuration(fmt.Sprintf("%ds", 1./updateEvery))
 	rec := &LogRecord{
 		Level:   CRITICAL,
 		Created: now,
@@ -455,8 +319,8 @@ func BenchmarkFormatLogRecord(b *testing.B) {
 		Message: "message",
 	}
 	for i := 0; i < b.N; i++ {
-		rec.Created += 1e9/updateEvery
-		if i % 2 == 0 {
+		rec.Created = rec.Created.Add(interval)
+		if i%2 == 0 {
 			FormatLogRecord(FORMAT_DEFAULT, rec)
 		} else {
 			FormatLogRecord(FORMAT_SHORT, rec)
@@ -469,8 +333,8 @@ func BenchmarkConsoleLog(b *testing.B) {
 	if err != nil {
 		panic(err)
 	}
-	if err := syscall.Dup2(sink.Fd(), syscall.Stdout); err != 0 {
-		panic(os.Errno(err))
+	if err = syscall.Dup2(int(sink.Fd()), syscall.Stdout); err != nil {
+		panic(err)
 	}
 
 	sl := NewDefaultLogger(INFO)
@@ -492,7 +356,6 @@ func BenchmarkConsoleUtilLog(b *testing.B) {
 		sl.Info("%s is a log message", "This")
 	}
 }
-
 
 func BenchmarkConsoleUtilNotLog(b *testing.B) {
 	sl := NewDefaultLogger(INFO)

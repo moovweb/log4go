@@ -3,22 +3,23 @@
 package log4go
 
 import (
-	"os"
+	"encoding/xml"
 	"fmt"
-	"xml"
-	"strings"
+	"os"
 	"strconv"
+	"strings"
+	"io/ioutil"
 )
 
 type LogConfig struct {
-	LogPrefix string
+	LogPrefix       string
 	ConsoleLogLevel int
-	SysLogLevel int
-	FileLogLevel int
-	LogFile string
-	File2LogLevel int
-	LogFile2 string
-	SyslogFacility int
+	SysLogLevel     int
+	FileLogLevel    int
+	LogFile         string
+	File2LogLevel   int
+	LogFile2        string
+	SyslogFacility  int
 }
 
 func NewLoggerFromConfig(logConfig *LogConfig, prefix string) (logger Logger) {
@@ -27,17 +28,17 @@ func NewLoggerFromConfig(logConfig *LogConfig, prefix string) (logger Logger) {
 		logger.AddFilter("stdout", LogLevel(logConfig.ConsoleLogLevel), NewConsoleLogWriter())
 		logger["stdout"].Prefix = prefix
 	}
-	
+
 	if logConfig.FileLogLevel > 0 {
-		logger.AddFilter("logfile", LogLevel(logConfig.FileLogLevel), NewFileLogWriter(logConfig.LogFile, false)) 
+		logger.AddFilter("logfile", LogLevel(logConfig.FileLogLevel), NewFileLogWriter(logConfig.LogFile, false))
 	}
-	
+
 	if logConfig.File2LogLevel > 0 {
-		logger.AddFilter("logfile2", LogLevel(logConfig.File2LogLevel), NewFileLogWriter(logConfig.LogFile2, false)) 
+		logger.AddFilter("logfile2", LogLevel(logConfig.File2LogLevel), NewFileLogWriter(logConfig.LogFile2, false))
 	}
 
 	if logConfig.SysLogLevel > 0 {
-		logger.AddFilter("syslog", LogLevel(logConfig.SysLogLevel), NewSysLogWriter(logConfig.SyslogFacility)) 
+		logger.AddFilter("syslog", LogLevel(logConfig.SysLogLevel), NewSysLogWriter(logConfig.SyslogFacility))
 	}
 	return
 }
@@ -64,14 +65,16 @@ func (log Logger) LoadConfiguration(filename string) {
 	log.Close()
 
 	// Open the configuration file
-	fd, err := os.Open(filename)
+	data, err := ioutil.ReadFile(filename) 
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "LoadConfiguration: Error:  Could not open %s for reading: %s\n", filename, err)
 		os.Exit(1)
 	}
-
 	xc := new(xmlLoggerConfig)
-	err = xml.Unmarshal(fd, xc)
+	
+	err = xml.Unmarshal(data, xc)
+
+	//err = xml.NewDecoder(fd).Decode(xc)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "LoadConfiguration: Error: Could not parse XML configuration in %s: %s\n", filename, err)
 		os.Exit(1)
@@ -152,7 +155,6 @@ func (log Logger) LoadConfiguration(filename string) {
 		if !enabled {
 			continue
 		}
-
 		log[xmlfilt.Tag] = &Filter{lvl, "", filt}
 	}
 }
