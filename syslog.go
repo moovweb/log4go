@@ -43,6 +43,7 @@ func connectSyslogDaemon() (sock net.Conn, err os.Error) {
 			if err != nil {
 				continue
 			} else {
+				println("syslog using", network, ":", path)
 				return
 			}
 		}
