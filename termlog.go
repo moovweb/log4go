@@ -25,14 +25,9 @@ func (w ConsoleLogWriter) run(out io.Writer) {
 	for rec := range w {
 		if rec.Created != timestrAt {
 			tm := TimeConversionFunction(rec.Created / 1e9)
-			timestr, timestrAt = fmt.Sprintf("%02d:%02d:%02d %s", tm.Hour, tm.Minute, tm.Second, tm.Zone), rec.Created/1e9
-			//timestr, timestrAt = fmt.Sprintf("%04d/%02d/%02d %02d:%02d:%02d %s", tm.Year, tm.Month, tm.Day, tm.Hour, tm.Minute, tm.Second, tm.Zone), rec.Created/1e9
+			timestr, timestrAt = fmt.Sprintf("%04d/%02d/%02d %02d:%02d:%02d %s", tm.Year, tm.Month, tm.Day, tm.Hour, tm.Minute, tm.Second, tm.Zone), rec.Created/1e9
 		}
-		id := rec.ID
-		if id == "" {
-			id = "     "
-		}
-		fmt.Fprint(out, id, " ", levelStrings[rec.Level], " ", timestr, " ", rec.Prefix, ": ", rec.Message, "\n")
+		fmt.Fprint(out, levelStrings[rec.Level], " ", timestr, " ", rec.Prefix, ": ", rec.Message, "\n")
 	}
 }
 
