@@ -306,7 +306,7 @@ func TestCountMallocs(t *testing.T) {
 	// Console logger formatted
 	mallocs = 0 - runtime.MemStats.Mallocs
 	for i := 0; i < N; i++ {
-		sl.Logf(WARNING, "%s is a log message with level %d", "This", WARNING)
+		sl.Logf(WARNING, "%s is a log message with level %s", "This", WARNING)
 	}
 	mallocs += runtime.MemStats.Mallocs
 	//fmt.Printf("mallocs per sl.Logf(WARNING, \"%%s is a log message with level %%d\", \"This\", WARNING): %d\n", mallocs/N)
@@ -469,7 +469,7 @@ func BenchmarkConsoleLog(b *testing.B) {
 	if err != nil {
 		panic(err)
 	}
-	if err := syscall.Dup2(sink.Fd(), syscall.Stdout); err != 0 {
+	if err, _ := syscall.Dup2(sink.Fd(), syscall.Stdout); err != 0 {
 		panic(os.Errno(err))
 	}
 
