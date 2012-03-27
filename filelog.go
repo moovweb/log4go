@@ -58,6 +58,9 @@ func (w *FileLogWriter) Close() {
 // The standard log-line format is:
 //   [%D %T] [%L] (%S) %M
 func NewFileLogWriter(fname string, rotate bool) *FileLogWriter {
+	if fname == "" {
+		panic("No file name specified")
+	}
 	w := &FileLogWriter{
 		rec:      make(chan *LogRecord, LogBufferLength),
 		rot:      make(chan bool),
