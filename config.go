@@ -21,6 +21,17 @@ type LogConfig struct {
 	SyslogFacility int
 }
 
+func NewLoggerFromLogger(original Logger, prefix string) (copy Logger) {
+	copy = make(Logger)
+	for filter_name, filter := range original {
+		copy.AddFilter(filter_name, filter.Level, NewConsoleLogWriter())
+		if filter_name == "stdout" {
+			copy[filter_name].Prefix = prefix
+		}
+	}
+	return
+}
+
 func NewLoggerFromConfig(logConfig *LogConfig, prefix string) (logger Logger) {
 	logger = make(Logger)
 	if logConfig.ConsoleLogLevel > 0 {
