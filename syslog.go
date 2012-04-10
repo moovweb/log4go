@@ -4,6 +4,7 @@ package log4go
 
 import (
 	"os"
+	"errors"
 	"fmt"
 	"net"
 	"time"
@@ -32,7 +33,7 @@ func (w SysLogWriter) Close() {
 	close(w)
 }
 
-func connectSyslogDaemon() (sock net.Conn, err os.Error) {
+func connectSyslogDaemon() (sock net.Conn, err error) {
 	logTypes := []string{"unixgram", "unix"}
 	logPaths := []string{"/dev/log", "/var/run/syslog"}
 	var raddr string
@@ -49,7 +50,7 @@ func connectSyslogDaemon() (sock net.Conn, err os.Error) {
 		}
 	}
 	if err != nil {
-		err = os.NewError("cannot connect to Syslog Daemon")
+		err = errors.New("cannot connect to Syslog Daemon")
 	}
 	return
 }
@@ -58,12 +59,12 @@ func NewSysLogWriter(facility int) (w SysLogWriter) {
 	offset := facility * 8
 	host, err := os.Hostname()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "cannot obtain hostname: %s\n", err.String())
+		fmt.Fprintf(os.Stderr, "cannot obtain hostname: %s\n", err.Error())
 		host = "unknown"
 	}
 	sock, err := connectSyslogDaemon()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "NewSysLogWriter: %s\n", err.String())
+		fmt.Fprintf(os.Stderr, "NewSysLogWriter: %s\n", err.Error())
 		return
 	}
 	w = SysLogWriter(make(chan *LogRecord, LogBufferLength))
@@ -76,11 +77,11 @@ func NewSysLogWriter(facility int) (w SysLogWriter) {
 		var timestr string
 		var timestrAt int64
 		for rec := range w {
-			if rec.Created != timestrAt {
-				timestrAt = rec.Created/1e9
-				timestr = time.SecondsToUTC(timestrAt).Format(time.RFC3339)
+			if rec.Created.Unix() != timestrAt {
+				timestrAt = rec.Created.Unix()
+				timestr = time.Unix(timestrAt, 0).UTC().Format(time.RFC3339)
 			}
-			fmt.Fprintf(sock, "<%d>%s %s %s: %s\n", offset + int(rec.Level), timestr, host, rec.Prefix, rec.Message)
+			fmt.Fprintf(sock, "<%d>%s %s %s: %s\n", offset+int(rec.Level), timestr, host, rec.Prefix, rec.Message)
 		}
 	}()
 	return
