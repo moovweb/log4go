@@ -4,7 +4,6 @@ package log4go
 
 import (
 	"os"
-	"errors"
 	"fmt"
 	"strings"
 )
@@ -164,10 +163,11 @@ func Notice(arg0 interface{}, args ...interface{}) {
 	}
 }
 
+
 // Utility for warn log messages (returns an os.Error for easy function returns) (see Debug() for parameter explanation)
 // These functions will execute a closure exactly once, to build the error message for the return
 // Wrapper for (*Logger).Warn
-func Warn(arg0 interface{}, args ...interface{}) error {
+func Warn(arg0 interface{}, args ...interface{}) os.Error {
 	const (
 		lvl = WARNING
 	)
@@ -175,16 +175,16 @@ func Warn(arg0 interface{}, args ...interface{}) error {
 	case string:
 		// Use the string as a format string
 		Global.intLogf(lvl, first, args...)
-		return errors.New(fmt.Sprintf(first, args...))
+		return os.NewError(fmt.Sprintf(first, args...))
 	case func() string:
 		// Log the closure (no other arguments used)
 		str := first()
 		Global.intLogf(lvl, "%s", str)
-		return errors.New(str)
+		return os.NewError(str)
 	default:
 		// Build a format string so that it will be similar to Sprint
 		Global.intLogf(lvl, fmt.Sprint(first)+strings.Repeat(" %v", len(args)), args...)
-		return errors.New(fmt.Sprint(first) + fmt.Sprintf(strings.Repeat(" %v", len(args)), args...))
+		return os.NewError(fmt.Sprint(first) + fmt.Sprintf(strings.Repeat(" %v", len(args)), args...))
 	}
 	return nil
 }
@@ -192,7 +192,7 @@ func Warn(arg0 interface{}, args ...interface{}) error {
 // Utility for error log messages (returns an os.Error for easy function returns) (see Debug() for parameter explanation)
 // These functions will execute a closure exactly once, to build the error message for the return
 // Wrapper for (*Logger).Error
-func Error(arg0 interface{}, args ...interface{}) error {
+func Error(arg0 interface{}, args ...interface{}) os.Error {
 	const (
 		lvl = ERROR
 	)
@@ -200,16 +200,16 @@ func Error(arg0 interface{}, args ...interface{}) error {
 	case string:
 		// Use the string as a format string
 		Global.intLogf(lvl, first, args...)
-		return errors.New(fmt.Sprintf(first, args...))
+		return os.NewError(fmt.Sprintf(first, args...))
 	case func() string:
 		// Log the closure (no other arguments used)
 		str := first()
 		Global.intLogf(lvl, "%s", str)
-		return errors.New(str)
+		return os.NewError(str)
 	default:
 		// Build a format string so that it will be similar to Sprint
 		Global.intLogf(lvl, fmt.Sprint(first)+strings.Repeat(" %v", len(args)), args...)
-		return errors.New(fmt.Sprint(first) + fmt.Sprintf(strings.Repeat(" %v", len(args)), args...))
+		return os.NewError(fmt.Sprint(first) + fmt.Sprintf(strings.Repeat(" %v", len(args)), args...))
 	}
 	return nil
 }
@@ -217,7 +217,7 @@ func Error(arg0 interface{}, args ...interface{}) error {
 // Utility for critical log messages (returns an os.Error for easy function returns) (see Debug() for parameter explanation)
 // These functions will execute a closure exactly once, to build the error message for the return
 // Wrapper for (*Logger).Critical
-func Critical(arg0 interface{}, args ...interface{}) error {
+func Critical(arg0 interface{}, args ...interface{}) os.Error {
 	const (
 		lvl = CRITICAL
 	)
@@ -225,16 +225,16 @@ func Critical(arg0 interface{}, args ...interface{}) error {
 	case string:
 		// Use the string as a format string
 		Global.intLogf(lvl, first, args...)
-		return errors.New(fmt.Sprintf(first, args...))
+		return os.NewError(fmt.Sprintf(first, args...))
 	case func() string:
 		// Log the closure (no other arguments used)
 		str := first()
 		Global.intLogf(lvl, "%s", str)
-		return errors.New(str)
+		return os.NewError(str)
 	default:
 		// Build a format string so that it will be similar to Sprint
 		Global.intLogf(lvl, fmt.Sprint(first)+strings.Repeat(" %v", len(args)), args...)
-		return errors.New(fmt.Sprint(first) + fmt.Sprintf(strings.Repeat(" %v", len(args)), args...))
+		return os.NewError(fmt.Sprint(first) + fmt.Sprintf(strings.Repeat(" %v", len(args)), args...))
 	}
 	return nil
 }
@@ -242,7 +242,7 @@ func Critical(arg0 interface{}, args ...interface{}) error {
 // Utility for alert log messages (returns an os.Error for easy function returns) (see Debug() for parameter explanation)
 // These functions will execute a closure exactly once, to build the error message for the return
 // Wrapper for (*Logger).Critical
-func Alert(arg0 interface{}, args ...interface{}) error {
+func Alert(arg0 interface{}, args ...interface{}) os.Error {
 	const (
 		lvl = ALERT
 	)
@@ -250,16 +250,16 @@ func Alert(arg0 interface{}, args ...interface{}) error {
 	case string:
 		// Use the string as a format string
 		Global.intLogf(lvl, first, args...)
-		return errors.New(fmt.Sprintf(first, args...))
+		return os.NewError(fmt.Sprintf(first, args...))
 	case func() string:
 		// Log the closure (no other arguments used)
 		str := first()
 		Global.intLogf(lvl, "%s", str)
-		return errors.New(str)
+		return os.NewError(str)
 	default:
 		// Build a format string so that it will be similar to Sprint
 		Global.intLogf(lvl, fmt.Sprint(first)+strings.Repeat(" %v", len(args)), args...)
-		return errors.New(fmt.Sprint(first) + fmt.Sprintf(strings.Repeat(" %v", len(args)), args...))
+		return os.NewError(fmt.Sprint(first) + fmt.Sprintf(strings.Repeat(" %v", len(args)), args...))
 	}
 	return nil
 }
@@ -267,7 +267,7 @@ func Alert(arg0 interface{}, args ...interface{}) error {
 // Utility for emergency log messages (returns an os.Error for easy function returns) (see Debug() for parameter explanation)
 // These functions will execute a closure exactly once, to build the error message for the return
 // Wrapper for (*Logger).Critical
-func Emergency(arg0 interface{}, args ...interface{}) error {
+func Emergency(arg0 interface{}, args ...interface{}) os.Error {
 	const (
 		lvl = EMERGENCY
 	)
@@ -275,16 +275,17 @@ func Emergency(arg0 interface{}, args ...interface{}) error {
 	case string:
 		// Use the string as a format string
 		Global.intLogf(lvl, first, args...)
-		return errors.New(fmt.Sprintf(first, args...))
+		return os.NewError(fmt.Sprintf(first, args...))
 	case func() string:
 		// Log the closure (no other arguments used)
 		str := first()
 		Global.intLogf(lvl, "%s", str)
-		return errors.New(str)
+		return os.NewError(str)
 	default:
 		// Build a format string so that it will be similar to Sprint
 		Global.intLogf(lvl, fmt.Sprint(first)+strings.Repeat(" %v", len(args)), args...)
-		return errors.New(fmt.Sprint(first) + fmt.Sprintf(strings.Repeat(" %v", len(args)), args...))
+		return os.NewError(fmt.Sprint(first) + fmt.Sprintf(strings.Repeat(" %v", len(args)), args...))
 	}
 	return nil
 }
+

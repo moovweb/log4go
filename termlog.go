@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"fmt"
-	"time"
 )
 
 var stdout io.Writer = os.Stdout
@@ -26,8 +25,9 @@ func (w ConsoleLogWriter) run(out io.Writer) {
 	var timestrAt int64
 
 	for rec := range w {
-		if rec.Created.Unix() != timestrAt {
-			timestr, timestrAt = rec.Created.Format(time.RFC1123), rec.Created.Unix()
+		if rec.Created != timestrAt {
+			tm := TimeConversionFunction(rec.Created / 1e9)
+			timestr, timestrAt = fmt.Sprintf("%04d/%02d/%02d %02d:%02d:%02d %s", tm.Year, tm.Month, tm.Day, tm.Hour, tm.Minute, tm.Second, tm.Zone), rec.Created/1e9
 		}
 		fmt.Fprint(out, levelStrings[rec.Level], " ", timestr, " ", rec.Prefix, ": ", rec.Message, "\n")
 	}
