@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"os"
 	"runtime"
+	"sync"
 	"testing"
 	"time"
 )
@@ -95,18 +96,28 @@ var logRecordWriteTests = []struct {
 }
 
 func TestConsoleLogWriter(t *testing.T) {
-	console := make(ConsoleLogWriter)
+	console := new(ConsoleLogWriter)
 
 	r, w := io.Pipe()
-	go console.run(w)
+	console.writer = w
 	defer console.Close()
 
 	buf := make([]byte, 1024)
 
+	var waiter sync.WaitGroup
+	waiter.Add(len(logRecordWriteTests))
+	go func() {
+		for _, test := range logRecordWriteTests {
+			console.LogWrite(test.Record)
+			//waiter.Done()
+		}
+	}()
+
+	//waiter.Wait()
+
 	for _, test := range logRecordWriteTests {
 		name := test.Test
 
-		console.LogWrite(test.Record)
 		n, _ := r.Read(buf)
 
 		if got, want := string(buf[:n]), test.Console; got != want {
@@ -410,7 +421,7 @@ func TestXMLConfig(t *testing.T) {
 	}
 
 	// Make sure they're the right type
-	if _, ok := log["stdout"].LogWriter.(ConsoleLogWriter); !ok {
+	if _, ok := log["stdout"].LogWriter.(*ConsoleLogWriter); !ok {
 		t.Fatalf("XMLConfig: Expected stdout to be ConsoleLogWriter, found %T", log["stdout"].LogWriter)
 	}
 	if _, ok := log["file"].LogWriter.(*FileLogWriter); !ok {
