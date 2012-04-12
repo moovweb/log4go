@@ -6,7 +6,7 @@ import (
 	"os"
 	"fmt"
 	"net"
-	"encoding/json"
+	"json"
 )
 
 // This log writer sends output to a socket

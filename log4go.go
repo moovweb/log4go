@@ -45,7 +45,6 @@ package log4go
 
 import (
 	"os"
-	"errors"
 	"fmt"
 	"time"
 	"strings"
@@ -77,9 +76,10 @@ const (
 	DEBUG
 )
 
+
 // Logging level strings
 var (
-	levelStrings     = [...]string{"EMEG", "ALRT", "CRIT", "EROR", "WARN", "NOTC", "INFO", "DEBG"}
+	levelStrings = [...]string{"EMEG", "ALRT", "CRIT", "EROR", "WARN", "NOTC", "INFO", "DEBG"}
 	levelFullStrings = [...]string{"EMERGENCY", "ALERT", "CRITICAL", "ERROR", "WARNING", "NOTICE", "INFO", "DEBUG"}
 )
 
@@ -92,7 +92,7 @@ func (l LogLevel) String() string {
 
 func LevelStringToLevel(level string) int {
 	level = strings.ToUpper(level)
-	for i, val := range levelFullStrings {
+	for i, val := range(levelFullStrings) {
 		if val == level {
 			return i
 		}
@@ -112,10 +112,10 @@ var (
 // A LogRecord contains all of the pertinent information for each message
 type LogRecord struct {
 	Level   LogLevel  // The log level
-	Created time.Time // The time at which the log message was created (nanoseconds)
-	Source  string    // The message source
-	Prefix  string    // The log message
-	Message string    // The log message
+	Created int64  // The time at which the log message was created (nanoseconds)
+	Source  string // The message source
+	Prefix  string // The log message
+	Message string // The log message
 }
 
 /****** LogWriter ******/
@@ -179,7 +179,7 @@ func (log Logger) Close() {
 	// Close all open loggers
 	for name, filt := range log {
 		filt.Close()
-		delete(log, name)
+		log[name] = nil, false
 	}
 }
 
@@ -223,7 +223,7 @@ func (log Logger) intLogf(lvl LogLevel, format string, args ...interface{}) {
 	// Make the log record
 	rec := &LogRecord{
 		Level:   lvl,
-		Created: time.Now(),
+		Created: time.Nanoseconds(),
 		Source:  src,
 		Prefix:  prefix,
 		Message: msg,
@@ -262,7 +262,7 @@ func (log Logger) intLogc(lvl LogLevel, closure func() string) {
 	// Make the log record
 	rec := &LogRecord{
 		Level:   lvl,
-		Created: time.Now(),
+		Created: time.Nanoseconds(),
 		Source:  src,
 		Message: closure(),
 	}
@@ -294,7 +294,7 @@ func (log Logger) Log(lvl LogLevel, source, message string) {
 	// Make the log record
 	rec := &LogRecord{
 		Level:   lvl,
-		Created: time.Now(),
+		Created: time.Nanoseconds(),
 		Source:  source,
 		Message: message,
 	}
@@ -392,7 +392,7 @@ func (log Logger) Notice(arg0 interface{}, args ...interface{}) {
 // message is not actually logged, because all formats are processed and all
 // closures are executed to format the error message.
 // See Debug for further explanation of the arguments.
-func (log Logger) Warn(arg0 interface{}, args ...interface{}) error {
+func (log Logger) Warn(arg0 interface{}, args ...interface{}) os.Error {
 	const (
 		lvl = WARNING
 	)
@@ -409,13 +409,13 @@ func (log Logger) Warn(arg0 interface{}, args ...interface{}) error {
 		msg = fmt.Sprintf(fmt.Sprint(first)+strings.Repeat(" %v", len(args)), args...)
 	}
 	log.intLogf(lvl, msg)
-	return errors.New(msg)
+	return os.NewError(msg)
 }
 
 // Error logs a message at the error log level and returns the formatted error,
 // See Warn for an explanation of the performance and Debug for an explanation
 // of the parameters.
-func (log Logger) Error(arg0 interface{}, args ...interface{}) error {
+func (log Logger) Error(arg0 interface{}, args ...interface{}) os.Error {
 	const (
 		lvl = ERROR
 	)
@@ -432,13 +432,13 @@ func (log Logger) Error(arg0 interface{}, args ...interface{}) error {
 		msg = fmt.Sprintf(fmt.Sprint(first)+strings.Repeat(" %v", len(args)), args...)
 	}
 	log.intLogf(lvl, msg)
-	return errors.New(msg)
+	return os.NewError(msg)
 }
 
 // Critical logs a message at the critical log level and returns the formatted error,
 // See Warn for an explanation of the performance and Debug for an explanation
 // of the parameters.
-func (log Logger) Critical(arg0 interface{}, args ...interface{}) error {
+func (log Logger) Critical(arg0 interface{}, args ...interface{}) os.Error {
 	const (
 		lvl = CRITICAL
 	)
@@ -455,13 +455,13 @@ func (log Logger) Critical(arg0 interface{}, args ...interface{}) error {
 		msg = fmt.Sprintf(fmt.Sprint(first)+strings.Repeat(" %v", len(args)), args...)
 	}
 	log.intLogf(lvl, msg)
-	return errors.New(msg)
+	return os.NewError(msg)
 }
 
 // Alert logs a message at the critical log level and returns the formatted error,
 // See Warn for an explanation of the performance and Debug for an explanation
 // of the parameters.
-func (log Logger) Alert(arg0 interface{}, args ...interface{}) error {
+func (log Logger) Alert(arg0 interface{}, args ...interface{}) os.Error {
 	const (
 		lvl = ALERT
 	)
@@ -478,13 +478,13 @@ func (log Logger) Alert(arg0 interface{}, args ...interface{}) error {
 		msg = fmt.Sprintf(fmt.Sprint(first)+strings.Repeat(" %v", len(args)), args...)
 	}
 	log.intLogf(lvl, msg)
-	return errors.New(msg)
+	return os.NewError(msg)
 }
 
 // Emergency logs a message at the critical log level and returns the formatted error,
 // See Warn for an explanation of the performance and Debug for an explanation
 // of the parameters.
-func (log Logger) Emergency(arg0 interface{}, args ...interface{}) error {
+func (log Logger) Emergency(arg0 interface{}, args ...interface{}) os.Error {
 	const (
 		lvl = EMERGENCY
 	)
@@ -501,5 +501,5 @@ func (log Logger) Emergency(arg0 interface{}, args ...interface{}) error {
 		msg = fmt.Sprintf(fmt.Sprint(first)+strings.Repeat(" %v", len(args)), args...)
 	}
 	log.intLogf(lvl, msg)
-	return errors.New(msg)
+	return os.NewError(msg)
 }

@@ -5,20 +5,20 @@ package log4go
 import (
 	"os"
 	"fmt"
-	"encoding/xml"
+	"xml"
 	"strings"
 	"strconv"
 )
 
 type LogConfig struct {
-	LogPrefix       string
+	LogPrefix string
 	ConsoleLogLevel int
-	SysLogLevel     int
-	FileLogLevel    int
-	LogFile         string
-	File2LogLevel   int
-	LogFile2        string
-	SyslogFacility  int
+	SysLogLevel int
+	FileLogLevel int
+	LogFile string
+	File2LogLevel int
+	LogFile2 string
+	SyslogFacility int
 }
 
 func NewLoggerFromLogger(original Logger, prefix string) (copy Logger) {
@@ -38,17 +38,17 @@ func NewLoggerFromConfig(logConfig *LogConfig, prefix string) (logger Logger) {
 		logger.AddFilter("stdout", LogLevel(logConfig.ConsoleLogLevel), NewConsoleLogWriter())
 		logger["stdout"].Prefix = prefix
 	}
-
+	
 	if logConfig.FileLogLevel > 0 {
-		logger.AddFilter("logfile", LogLevel(logConfig.FileLogLevel), NewFileLogWriter(logConfig.LogFile, false))
+		logger.AddFilter("logfile", LogLevel(logConfig.FileLogLevel), NewFileLogWriter(logConfig.LogFile, false)) 
 	}
-
+	
 	if logConfig.File2LogLevel > 0 {
-		logger.AddFilter("logfile2", LogLevel(logConfig.File2LogLevel), NewFileLogWriter(logConfig.LogFile2, false))
+		logger.AddFilter("logfile2", LogLevel(logConfig.File2LogLevel), NewFileLogWriter(logConfig.LogFile2, false)) 
 	}
 
 	if logConfig.SysLogLevel > 0 {
-		logger.AddFilter("syslog", LogLevel(logConfig.SysLogLevel), NewSysLogWriter(logConfig.SyslogFacility))
+		logger.AddFilter("syslog", LogLevel(logConfig.SysLogLevel), NewSysLogWriter(logConfig.SyslogFacility)) 
 	}
 	return
 }
@@ -82,7 +82,7 @@ func (log Logger) LoadConfiguration(filename string) {
 	}
 
 	xc := new(xmlLoggerConfig)
-	err = xml.NewDecoder(fd).Decode(xc)
+	err = xml.Unmarshal(fd, xc)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "LoadConfiguration: Error: Could not parse XML configuration in %s: %s\n", filename, err)
 		os.Exit(1)
