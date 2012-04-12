@@ -144,7 +144,7 @@ func TestSysLog(t *testing.T) {
 	if w == nil {
 		t.Fatalf("Invalid return: w should not be nil")
 	}
-	
+
 	sl := make(Logger)
 	sl.AddFilter("stdout", DEBUG, w)
 	sl.Log(INFO, "TestSysLog", "This message is level INFO")
@@ -168,7 +168,6 @@ func TestSysLogWriter(t *testing.T) {
 	w.Close()
 	runtime.Gosched()
 }
-
 
 func TestXMLLogWriter(t *testing.T) {
 	defer func(buflen int) {
@@ -284,7 +283,7 @@ func TestLogOutput(t *testing.T) {
 
 	sum := md5.New()
 	sum.Write(contents)
-	if sumstr := hex.EncodeToString(sum.Sum()); sumstr != expected {
+	if sumstr := hex.EncodeToString(sum.Sum(nil)); sumstr != expected {
 		t.Errorf("--- Log Contents:\n%s---", string(contents))
 		t.Fatalf("Checksum does not match: %s (expecting %s)", sumstr, expected)
 	}
@@ -454,8 +453,8 @@ func BenchmarkFormatLogRecord(b *testing.B) {
 		Message: "message",
 	}
 	for i := 0; i < b.N; i++ {
-		rec.Created += 1e9/updateEvery
-		if i % 2 == 0 {
+		rec.Created += 1e9 / updateEvery
+		if i%2 == 0 {
 			FormatLogRecord(FORMAT_DEFAULT, rec)
 		} else {
 			FormatLogRecord(FORMAT_SHORT, rec)
@@ -465,14 +464,14 @@ func BenchmarkFormatLogRecord(b *testing.B) {
 
 func BenchmarkConsoleLog(b *testing.B) {
 	/*
-	sink, err := os.Open(os.DevNull)
-	if err != nil {
-		panic(err)
-	}
+		sink, err := os.Open(os.DevNull)
+		if err != nil {
+			panic(err)
+		}
 
-	if err, _ := syscall.Dup2(sink.Fd(), syscall.Stdout); err != 0 {
-		panic(os.Errno(err))
-	}
+		if err, _ := syscall.Dup2(sink.Fd(), syscall.Stdout); err != 0 {
+			panic(os.Errno(err))
+		}
 	*/
 	stdout = ioutil.Discard
 	sl := NewDefaultLogger(INFO)
@@ -494,7 +493,6 @@ func BenchmarkConsoleUtilLog(b *testing.B) {
 		sl.Info("%s is a log message", "This")
 	}
 }
-
 
 func BenchmarkConsoleUtilNotLog(b *testing.B) {
 	sl := NewDefaultLogger(INFO)
