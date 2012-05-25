@@ -170,8 +170,7 @@ func TestSysLogWriter(t *testing.T) {
 	runtime.Gosched()
 }
 
-// Skipping this test.
-func testXMLLogWriter(t *testing.T) {
+func TestXMLLogWriter(t *testing.T) {
 	defer func(buflen int) {
 		LogBufferLength = buflen
 	}(LogBufferLength)
